@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:20.04 as builder
 
 ARG GO_VERSION="1.20.5"
 ADD https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz /go.tar.gz
