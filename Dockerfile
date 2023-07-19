@@ -1,14 +1,7 @@
 FROM ubuntu:22.04 as builder
 
 ARG GO_VERSION="1.20.5"
-
-ARG CHANNEL
-ARG URL
-ARG BRANCH
-ARG SHA
-ARG TARGETARCH
-
-ADD https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz /go.tar.gz
+ADD https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz /go.tar.gz
 
 # Basic dependencies.
 ENV HOME="/node" DEBIAN_FRONTEND="noninteractive" GOPATH="/dist"
@@ -35,11 +28,10 @@ COPY ./installer/config.json.example /dist/files/run/config.json.example
 # Install algod binaries.
 RUN /dist/files/build/install.sh \
     -p "${GOPATH}/bin" \
-    -d "/algod/data" \
-    -c "${CHANNEL}" \
-    -u "${URL}" \
-    -b "${BRANCH}" \
-    -s "${SHA}"
+    -d "/algod/data" \ 
+    -c "stable" \
+    -u "https://github.com/algorand/go-algorand.git" \
+    -s "2ee0385060033f1d89db3096d5939adf7e7f85cb9b611d003418968018f01690"
 
 FROM debian:bookworm-20230703-slim as final
 
@@ -51,16 +43,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p "$ALGORAND_DATA" && \
-    groupadd --gid=999 --system algorand && \
-    useradd --uid=999 --no-log-init --create-home --system --gid algorand algorand && \
-    chown -R algorand:algorand /algod
+    chown -R root:root /algod
 
+USER root
 COPY --chown=algorand:algorand --from=builder "/dist/bin/" "/node/bin/"
 COPY --chown=algorand:algorand --from=builder "/dist/files/run/" "/node/run/"
+COPY healthcheck /usr/local/bin
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+RUN chmod 755 /usr/local/bin/healthcheck
+RUN mkdir -p /var/log/supervisor
 
 # Expose Algod REST API, KMD REST API, Algod Gossip, and Prometheus Metrics ports
-EXPOSE $ALGOD_PORT $KMD_PORT 4160 9100
+EXPOSE $ALGOD_PORT $KMD_PORT 4160 9100 1337
 
 WORKDIR /algod
 
-CMD ["/node/run/run.sh"]
+ENTRYPOINT ["/usr/bin/supervisord"]
