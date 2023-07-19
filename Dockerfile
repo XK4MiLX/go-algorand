@@ -12,8 +12,8 @@ RUN apt-get update && \
     apt-utils \
     bsdmainutils \
     curl \
-    git \
-    && update-ca-certificates && \
+    git && \
+    update-ca-certificates && \
     && rm -rf /var/lib/apt/lists/* && \
     \
     tar -C /usr/local -xzf /go.tar.gz && \
