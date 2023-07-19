@@ -15,10 +15,10 @@ fi
 # to our algorand user. The script is initially run as the root user
 # in order to change permissions, afterwards the script is re-launched
 # as the algorand user.
-if [ "$(id -u)" = '0' ]; then
-  chown -R algorand:algorand $ALGORAND_DATA
-  exec gosu algorand "$0" "$@"
-fi
+#if [ "$(id -u)" = '0' ]; then
+#  chown -R algorand:algorand $ALGORAND_DATA
+#  exec gosu algorand "$0" "$@"
+#fi
 
 # Script to configure or resume a network. Based on environment settings the
 # node will be setup with a private network or connect to a public network.
